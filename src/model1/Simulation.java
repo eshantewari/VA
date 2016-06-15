@@ -7,15 +7,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.StringTokenizer;
 
 import model1.Doctor;
 import model1.Patient;
 import model1.Room;
-
-//Issue - Nothing happens past a certain time
 
 public class Simulation {
 

@@ -1,27 +1,1 @@
-Exam_Type	Medical Assitant 1	Nurse Practitioner 1	Medical Assitant 2	Nurse Practitioner 2	Medical Assitant 3	Nurse Practitioner 3	Medical Assitant 4	Nurse Practitioner 4	Audio Medical Asistant	Audiology	Neurology Medical Assistant	Neurology	Psychiatry Medical Assistant	Psychiatry
-Exam_Length	14	6	21	9	31	14	42	18	21	9	0	45	42	18
-														
-Triage_Rooms	4													
-General_Examination_Rooms	4													
-Psychiatry_Rooms	2													
-Audiology_Rooms	1													
-														
-	Minimum	Maximum	Cost	Min Staff, Max Staff										
-Range_of_Medical_Assistants	2	4	1											
-Range_of_Nurse_Practitioners	1	3	1											
-Range_of_Audiologists	1	1	1											
-Range_of_Neurologists	2	2	1											
-Range_of_Psychiatrists	1	1	1											
-														
-General_Medicine	0.65													
-Audio	0.1													
-Psychiatry/Neurology	0.25													
-														
-	General Medicine	Audio	Psychiatry_Neurological											
-Case_1	0.4	1	0.9											
-Case_2	0.4	0	0.1											
-Case_3	0.2	0	0											
-														
-Length_of_Days	480													
-Patient_Appointment_Frequency	30													
-Number_of_Cases	20	(per day)												
+Exam_Type	Medical Assitant 1	Nurse Practitioner 1	Medical Assitant 2	Nurse Practitioner 2	Medical Assitant 3	Nurse Practitioner 3	Medical Assitant 4	Nurse Practitioner 4	Audio Medical Asistant	Audiology	Neurology Medical Assistant	Neurology	Psychiatry Medical Assistant	PsychiatryExam_Length	14	6	21	9	31	14	42	18	21	9	0	45	42	18														Triage_Rooms	4													General_Examination_Rooms	4													Psychiatry_Rooms	1													Audiology_Rooms	1																												Minimum Staff	Maximum Staff	Cost											Range_of_Medical_Assistants	2	4	1											Range_of_Nurse_Practitioners	2	4	1											Range_of_Audiologists	1	1	1											Range_of_Neurologists	2	2	1											Range_of_Psychiatrists	1	1	1																									General_Medicine	0.65													Audio	0.25													Psychiatry/Neurology	0.1																												General Medicine	Audio	Psychiatry_Neurological											Case_1	0.4	1	0.9											Case_2	0.4	0	0.1											Case_3	0.2	0	0																									Length_of_Days	480													Patient_Appointment_Frequency	30													Number_of_Cases_Per_Day	15													
