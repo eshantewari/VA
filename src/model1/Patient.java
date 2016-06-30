@@ -7,16 +7,26 @@ import java.util.Collections;
 public class Patient {
 	
 	
-	//Categories - MA1, NP1, MA2, NP2, MA3, NP3, MA4, NP4, AMA, A, NMA, N, PMA, P (Type of Exam)
+	//Categories - PMA1, MA1, NP1, PMA2, MA2, NP2, PMA3, MA3, NP3, PMA4, MA4, NP4, PAMA, AMA, A, PNMA, NMA, N, PPMA, PMA, P (Type of Exam)
 	//What the patient needs
-	public static final int[] GM1 = {0,0,2,2,0,0,0,0,0,0,0,1,0,0}; //Case Type 1
-	public static final int[] GM2 = {0,0,3,3,0,0,0,0,0,0,0,1,1,1}; //Case Type 2
-	public static final int[] GM3 = {1,1,4,4,0,0,1,1,0,0,0,0,1,1}; //Case Type 3
-	public static final int[] A1 =  {0,0,2,2,0,0,0,0,1,1,0,0,1,1}; //Case Type 4
-	public static final int[] PN1 = {0,0,0,0,0,0,0,0,0,0,0,1,2,2}; //Case Type 5
-	public static final int[] PN2 = {0,0,2,2,0,0,0,0,0,0,0,1,2,2}; //Case Type 6
+	public static final int[] GM1 = {0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0}; //Case Type 1
+	public static final int[] GM2 = {0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1}; //Case Type 2
+	public static final int[] GM3 = {1,1,1,4,4,4,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1}; //Case Type 3
+	public static final int[] A1 =  {0,0,0,2,2,2,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1}; //Case Type 4
+	public static final int[] PN1 = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2}; //Case Type 5
+	public static final int[] PN2 = {0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2}; //Case Type 6
 	
 	
+	private String name;
+	private int checkInLength;
+	private int checkOutLength;
+	private boolean checkedIn;
+	private boolean checkedOut;
+	private int checkInTime;
+	private int checkOutTime;
+	private int numCases;
+	private int timeSinceExam;
+	private boolean completelyDone;
 	private int[] occupied;
 	private int appt;
 	private int apptInterval;
@@ -24,7 +34,9 @@ public class Patient {
 	private ArrayList<Integer> endTimes;
 	private ArrayList<Room> rooms;
 	private ArrayList<Doctor> doctors;
-
+	private int place;
+	
+	private boolean MAdone;
 	private boolean done;
 	private int[] needs;
 	private int current; //current appointment
@@ -34,6 +46,7 @@ public class Patient {
 	
 	private boolean started;
 	
+	private int doneTime;
 
 	private int[] seenMA; //need to see MA before NP, Audio, Psych
 	
@@ -43,12 +56,19 @@ public class Patient {
 	
 	private CaseType caseType;
 	
-	public Patient(int dayLength, int apptInterval, CaseType type, int[] lengths){
+	public Patient(int dayLength, int apptInterval, CaseType type, int[] lengths, int checkInLength, int checkOutLength, int index, int place){
+		this.checkInLength = checkInLength;
+		this.checkOutLength = checkOutLength;
+		checkInTime = -1;
+		checkOutTime = -1;
+		timeSinceExam = 0;
 		this.dayLength = dayLength;
 		done = false;
+		setCompletelyDone(false);
 		occupied = new int[dayLength];
 		caseType = type;
 		appt = 0;
+		MAdone = false;
 		this.apptInterval = apptInterval;
 		startTimes = new ArrayList<Integer>();
 		endTimes = new ArrayList<Integer>();
@@ -56,8 +76,12 @@ public class Patient {
 		doctors = new ArrayList<Doctor>();
 		started = false;
 		this.lengths = lengths;
-		needs = new int[14];
-		seenMA = new int[14];
+		needs = new int[lengths.length];
+		seenMA = new int[lengths.length];
+		setCheckedIn(false);
+		setCheckedOut(false);
+		setDoneTime(-1);
+		
 		int[] arr = null;
 		
 		switch(caseType){
@@ -85,7 +109,21 @@ public class Patient {
 			needs[i] = arr[i];
 		}
 		
+		setNumCases(0);
+		for(int i = 0; i < needs.length; i+=3){
+			setNumCases(getNumCases() + needs[i]);
+		}
 		
+		name = type.toString()+" "+index;
+		this.place = place;
+	}
+	
+	public static int numWaiting(int time, Patient[] patients){
+		int count = 0;
+		for(Patient p:patients){
+			if(!p.isDone() && !p.isBusy(time) && p.hasStarted()) count++;
+		}
+		return count;
 	}
 	
 	public int startWaitTime(){
@@ -141,9 +179,51 @@ public class Patient {
 			for(int i = 1; i < startTimes.size(); i++){
 				time+=startTimes.get(i)-endTimes.get(i-1);
 			}
-			return time-25;
+			return time;
 		}
 		return 0;
+	}
+	
+	public int lobbyTimePerCase(){
+		return lobbyTime()/numCases;
+	}
+	
+	public int inOutTimePerCase(){
+		return inOutTime()/numCases;
+	}
+	
+	public static int remainingCases(Patient[] patients) {
+		int cases = 0;
+		for(Patient p:patients){
+			int[] needs = p.getNeeds();
+			for(int i:needs){
+				cases += i;
+			}
+		}
+		return cases;
+	}
+	
+	public static int numDBQs(Patient[] patients){
+		int dbqs = 0;
+		for(Patient p:patients){
+			int[] needs = p.getNeeds();
+			for(int i = 2; i < needs.length; i+=3){
+				dbqs+=needs[i];
+			}
+		}
+		return dbqs;
+	}
+	
+	public static int totalDBQtime(Patient[] patients){
+		int dbqs = 0;
+		for(Patient p:patients){
+			int[] needs = p.getNeeds();
+			for(int i = 2; i < needs.length; i+=3){
+				int mult = p.lengths[i-2]+p.lengths[i-1]+p.lengths[i];
+				dbqs+=needs[i]*mult;
+			}
+		}
+		return dbqs;
 	}
 	
 	public static int totalLobbyTime(Patient[] patients){
@@ -157,11 +237,17 @@ public class Patient {
 	private void optimalAppt(){
 
 		if(startTimes.size()>0)
-			appt = ((startTimes.get(0)-25)/apptInterval)*apptInterval;
+			appt = ((startTimes.get(0)-checkInLength)/apptInterval)*apptInterval;
 
 	}
 	
 	public void addTime(int time, int category, Doctor doctor, Room room){
+		timeSinceExam = 0;
+		if(room.getType() == Room.RoomType.PLANNING){
+			needs[category]--;
+			return;
+		}
+		
 		startTimes.add(time);
 		endTimes.add(time+lengths[category]);
 		rooms.add(room);
@@ -176,8 +262,8 @@ public class Patient {
 		
 		if(doctor.getType() == Doctor.DocType.MA)
 			seenMA[category] ++;
-		else
-			seenMA[category-1]--;
+		else if(category % 3 == 2)
+			seenMA[category-1] --;
 
 	}
 	
@@ -187,18 +273,58 @@ public class Patient {
 		optimalAppt();
 	}
 	
-	public void update(){
+	public void update(int time){
+		if(hasStarted() && !isBusy(time)){
+			timeSinceExam++;
+		}
 		if(!done){
 			for(int i = 0; i < needs.length; i++){
+				if(i%3 == 0) continue; //PMA
 				if(needs[i] != 0) return;
 			}
-
+			setDoneTime(time);
 			done = true;
 		}
+		//PMA
+		if(!completelyDone){
+			for(int i = 0; i < needs.length; i+=3){
+				if(needs[i] != 0) return;
+			}
+			completelyDone = true;
+		}
+		
 	}
 	
+	public void checkIn(int time){
+		for(int i = time; i < time+checkInLength; i++){
+			if(occupied[i]==1) return;
+
+		}
+		
+		for(int i = time; i < time+checkInLength; i++){
+			occupied[i] = 1;
+		}
+		
+		checkInTime = time+checkInLength;
+		checkedIn = true;
+	}
+	
+	public void checkOut(int time){
+		for(int i = time; i < time+checkOutLength; i++){
+			if(i >= dayLength) break;
+			occupied[i] = 1;
+		}
+		checkedOut = true;
+		return;
+	}
+	
+	public int getStartTime(){
+		return startTimes.get(0) - checkInLength;
+	}
+	
+	
 	public String toString(){
-		return caseType.toString();
+		return name;
 	}
 
 	public int getAppt() {
@@ -317,5 +443,167 @@ public class Patient {
 	public void setOccupied(int[] occupied) {
 		this.occupied = occupied;
 	}
+
+	/**
+	 * @return the mAdone
+	 */
+	public boolean isMAdone() {
+		return MAdone;
+	}
+
+	/**
+	 * @param mAdone the mAdone to set
+	 */
+	public void setMAdone(boolean mAdone) {
+		MAdone = mAdone;
+	}
+
+	/**
+	 * @return the numCases
+	 */
+	public int getNumCases() {
+		return numCases;
+	}
+
+	/**
+	 * @param numCases the numCases to set
+	 */
+	public void setNumCases(int numCases) {
+		this.numCases = numCases;
+	}
+
+	/**
+	 * @return the completelyDone
+	 */
+	public boolean isCompletelyDone() {
+		return completelyDone;
+	}
+
+	/**
+	 * @param completelyDone the completelyDone to set
+	 */
+	public void setCompletelyDone(boolean completelyDone) {
+		this.completelyDone = completelyDone;
+	}
+
+	public int[] getSeenMA() {
+		return seenMA;
+	}
+
+	public void setSeenMA(int[] seenMA) {
+		this.seenMA = seenMA;
+	}
+
+	/**
+	 * @return the timeSinceExam
+	 */
+	public int getTimeSinceExam() {
+		return timeSinceExam;
+	}
+
+	/**
+	 * @param timeSinceExam the timeSinceExam to set
+	 */
+	public void setTimeSinceExam(int timeSinceExam) {
+		this.timeSinceExam = timeSinceExam;
+	}
+
+	/**
+	 * @return the checkedOut
+	 */
+	public boolean isCheckedOut() {
+		return checkedOut;
+	}
+
+	/**
+	 * @param checkedOut the checkedOut to set
+	 */
+	public void setCheckedOut(boolean checkedOut) {
+		this.checkedOut = checkedOut;
+	}
+
+	/**
+	 * @return the checkedIn
+	 */
+	public int isCheckedIn(int time) {
+		if(!checkedIn) return 0;
+		if(checkedIn && time < checkInTime) return 1;
+		else return 2;
+		
+	}
+
+	/**
+	 * @param checkedIn the checkedIn to set
+	 */
+	public void setCheckedIn(boolean checkedIn) {
+		this.checkedIn = checkedIn;
+	}
+
+	/**
+	 * @return the checkOutLength
+	 */
+	public int getCheckOutLength() {
+		return checkOutLength;
+	}
+
+	/**
+	 * @param checkOutLength the checkOutLength to set
+	 */
+	public void setCheckOutLength(int checkOutLength) {
+		this.checkOutLength = checkOutLength;
+	}
+
+	public int getCheckInLength() {
+		return checkInLength;
+	}
+
+	public void setCheckInLength(int checkInLength) {
+		this.checkInLength = checkInLength;
+	}
+
+	public int getCheckInTime() {
+		return checkInTime;
+	}
+
+	public void setCheckInTime(int checkInTime) {
+		this.checkInTime = checkInTime;
+	}
+
+	public int getCheckOutTime() {
+		return checkOutTime;
+	}
+
+	public void setCheckOutTime(int checkOutTime) {
+		this.checkOutTime = checkOutTime;
+	}
+
+	/**
+	 * @return the doneTime
+	 */
+	public int getDoneTime() {
+		return doneTime;
+	}
+
+	/**
+	 * @param doneTime the doneTime to set
+	 */
+	public void setDoneTime(int doneTime) {
+		this.doneTime = doneTime;
+	}
+
+	/**
+	 * @return the place
+	 */
+	public int getPlace() {
+		return place;
+	}
+
+	/**
+	 * @param place the place to set
+	 */
+	public void setPlace(int place) {
+		this.place = place;
+	}
+
 	
 }

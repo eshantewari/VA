@@ -6,14 +6,16 @@ import java.util.Collections;
 import model1.Room;
 
 public class Doctor {
-	//Categories - MA1, NP1, MA2, NP2, MA3, NP3, MA4, NP4, AMA, A, NMA, N, PMA, P 
-	public static final boolean[] MA = {true,false,true,false,true,false,true,false,true,false,false,false,true,false}; //Medical Assistant
-	public static final boolean[] NP = {false,true,false,true,false,true,false,true,false,false,false,false,false,false}; //Nurse Practitioner
-	public static final boolean[] A =  {false,false,false,false,false,false,false,false,false,true,false,false,false,false}; //Audio
-	public static final boolean[] N =  {false,false,false,false,false,false,false,false,false,false,false,true,false,false}; //Neurologist
-	public static final boolean[] P =  {false,false,false,false,false,false,false,false,false,false,false,false,false,true}; //Psychiatrist
+	//Categories - PMA1, MA1, NP1, PMA2, MA2, NP2, PMA3, MA3, NP3, PMA4, MA4, NP4, PAMA, AMA, A, PNMA, NMA, N, PPMA, PMA, P (Type of Exam)
+	public static final boolean[] MA = {true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false}; //Medical Assistant
+	public static final boolean[] NP = {false,false,true,false,false,true,false,false,true,false,false,true,false,false,false,false,false,false,false,false,false}; //Nurse Practitioner
+	public static final boolean[] A =  {false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false}; //Audio
+	public static final boolean[] N =  {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false}; //Neurologist
+	public static final boolean[] P =  {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true}; //Psychiatrist
 
-
+	private String name;
+	private int checkInLength;
+	private int checkOutLength;
 
 	private int[] occupied;
 	private double cost;
@@ -26,7 +28,6 @@ public class Doctor {
 	private int startTime;
 	private int endTime;
 
-	//1 = MA, 2 = NP, 3 = Audio, 4 = Neurologist, 5 = Psychiatrist
 	
 
 	
@@ -38,9 +39,11 @@ public class Doctor {
 	private DocType type;
 	private boolean[] types;
 	
-	public Doctor(int cost, int dayLength, DocType type, int[] lengths){
+	public Doctor(int cost, int dayLength, DocType type, int[] lengths, int checkInLength, int checkOutLength, int index){
+		this.checkInLength = checkInLength;
+		this.checkOutLength = checkOutLength;
 		this.dayLength = dayLength;
-		startTime = 0;
+		startTime = -1;
 		startTimes = new ArrayList<Integer>();
 		endTimes = new ArrayList<Integer>();
 		rooms = new ArrayList<Room>();
@@ -68,6 +71,8 @@ public class Doctor {
 				break;
 		}
 		
+		name = type.toString()+" "+index;
+		
 	}
 	
 	public static int totalWastedTime(Doctor[] doctors){
@@ -87,7 +92,7 @@ public class Doctor {
 	}
 	
 	public double cost(){
-		return (endTime-startTime)/60.0*cost;
+		return (endTime-startTime)*cost;
 	}
 	
 	//put the doc to use
@@ -133,10 +138,27 @@ public class Doctor {
 	
 	public void update(){}
 	
+	public void checkIn(int time){
+		for(int i = time; i < time+checkInLength; i++){
+			if(occupied[i]==1) return;
+
+		}
+		
+		for(int i = time; i < time+checkInLength; i++){
+			occupied[i] = 1;
+		}
+		return;
+	}
 	
+	public void checkOut(int time){
+		for(int i = time; i < time+checkOutLength; i++){
+			if(i >= dayLength) break;
+			occupied[i] = 1;
+		}
+	}
 	
 	public String toString(){
-		return type.toString();
+		return name;
 	}
 	
 	
