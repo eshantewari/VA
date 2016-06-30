@@ -26,6 +26,12 @@ import model1.Doctor;
 import model1.Patient;
 import model1.Room;
 
+/**
+ * 
+ * @author Eshan Tewari, for Infinite Computer Solutions
+ *
+ */
+
 public class Simulation {
 
 
@@ -225,12 +231,6 @@ public class Simulation {
 
 		int sanitation = (int) evaluator.evaluateInCell(cellIterator.next()).getNumericCellValue();
 
-
-		row = rowIterator.next();
-		cellIterator = row.cellIterator();
-		cellIterator.next();
-		int maxWaiting = (int) evaluator.evaluateInCell(cellIterator.next()).getNumericCellValue();
-
 		cases+=3;
 		for(int i = 0; i < lengths.length; i++){
 			if(i % 3 == 0) continue;
@@ -252,275 +252,236 @@ public class Simulation {
 				for(int numA = rangeA[0]; numA <= rangeA[1]; numA++){
 					for(int numN = rangeN[0]; numN <= rangeN[1]; numN++){
 						for(int numP = rangeP[0]; numP <= rangeP[1]; numP++){
-							Patient[] patients = null;
-							Room[] rooms = null;
-							Doctor[] doctors = null;
-							int[] lobbyOccupancy = new int[dayLength];
-							ArrayList<Patient> tempPatients = new ArrayList<Patient>();
-							int index = 0;
-							for(int i = 0; i < (int)(cases*PN*PNcase1); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.PN1, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-							for(int i = 0; i < (int)(cases*PN*PNcase2); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.PN2, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-							for(int i = 0; i < (int)(cases*genMed*GMcase1); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM1, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-							for(int i = 0; i < (int)(cases*genMed*GMcase2); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM2, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-							for(int i = 0; i < (int)(cases*genMed*GMcase3); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM3, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-
-							for(int i = 0; i < (int)(cases*A*Acase1); i++){
-								tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.A1, lengths, checkInLength, checkOutLength, i+1, index));
-								index++;
-							}
-
-
-							patients = tempPatients.toArray(new Patient[tempPatients.size()]);
-
-							if(flag){
-								System.out.println("Number of DBQs: "+Patient.numDBQs(patients));
-								System.out.println("Total Diagnostic Time: "+Patient.totalDBQtime(patients));
-								flag = false;
-							}
-
-							ArrayList<Room> tempRooms = new ArrayList<Room>();
-							tempRooms.add(new Room(dayLength, Room.RoomType.PLANNING, lengths, 0));
-							for(int i = 0; i < roomTriage; i++){
-								tempRooms.add(new Room(dayLength, Room.RoomType.TRIAGE, lengths, i+1));
-							}		
-							for(int i = 0; i < roomGM; i++){
-								tempRooms.add(new Room(dayLength, Room.RoomType.GM, lengths, i+1));
-							}
-							for(int i = 0; i < roomA; i++){
-								tempRooms.add(new Room(dayLength, Room.RoomType.A, lengths, i+1));
-							}
-							for(int i = 0; i < roomP; i++){
-								tempRooms.add(new Room(dayLength, Room.RoomType.P, lengths, i+1));
-							}
-
-							rooms = tempRooms.toArray(new Room[tempRooms.size()]);
-
-							ArrayList<Doctor> tempDoctors = new ArrayList<Doctor>();	
-							for(int i = 0; i < numMA; i++){
-								tempDoctors.add(new Doctor(costs[0], dayLength, Doctor.DocType.MA, lengths, checkInLength, checkOutLength, i+1));
-							}
-							for(int i = 0; i < numNP; i++){
-								tempDoctors.add(new Doctor(costs[1], dayLength, Doctor.DocType.NP, lengths, checkInLength, checkOutLength, i+1));
-							}
-							for(int i = 0; i < numA; i++){
-								tempDoctors.add(new Doctor(costs[2], dayLength, Doctor.DocType.A, lengths, checkInLength, checkOutLength, i+1));
-							}	
-							for(int i = 0; i < numN; i++){
-								tempDoctors.add(new Doctor(costs[3], dayLength, Doctor.DocType.N, lengths, checkInLength, checkOutLength, i+1));
-							}
-							for(int i = 0; i < numP; i++){
-								tempDoctors.add(new Doctor(costs[4], dayLength, Doctor.DocType.P, lengths, checkInLength, checkOutLength, i+1));
-							}
-
-
-							doctors = tempDoctors.toArray(new Doctor[tempDoctors.size()]);
-
-							int doneIndex = 0;
-							sortPatients(patients, doneIndex);
-							
-							//book the audiologist
-							for(int time = 0; time < dayLength; time+=iteration){
-								for(int i = 0; i < patients.length; i++){
-
-									doneIndex = donePatients(patients);
-									//sortPatients(patients, doneIndex);
-
-									Patient patient = patients[i];
-									if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
-									int[] needs = patient.getNeeds();
-									if(patient.isDone()) continue;
-									for(int j =13; j <= 14; j++){
-										if(j%3==0) continue; //Pre-MA
-										if(needs[j] != 0){
-											boolean made = false;
-											if(j%3==2){
-												made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
-											}
-											else{
-												if(!patient.isMAdone())
-													made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
-											}
-											//if(made) break; //cannot address two needs at the same time
-										}
-
+							for(int maxWaiting = 0; maxWaiting < cases; maxWaiting++){
+								for(int a = 0; a < 50; a++){
+									Patient[] patients = null;
+									Room[] rooms = null;
+									Doctor[] doctors = null;
+									int[] lobbyOccupancy = new int[dayLength];
+									ArrayList<Patient> tempPatients = new ArrayList<Patient>();
+									int index = 0;
+									for(int i = 0; i < (int)(cases*PN*PNcase1); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.PN1, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
 									}
-									update(patients, rooms, doctors, time);
-								}
-
-							}
-
-							//book the neurologist
-							for(int time = 0; time < dayLength; time+=iteration){
-								for(int i = 0; i < patients.length; i++){
-
-									doneIndex = donePatients(patients);
-									//sortPatients(patients, doneIndex);
-
-									Patient patient = patients[i];
-									if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
-									int[] needs = patient.getNeeds();
-									if(patient.isDone()) continue;
-									for(int j = 16; j <= 17; j++){
-										if(j%3==0) continue; //Pre-MA
-										if(needs[j] != 0){
-											boolean made = false;
-											if(j%3==2){
-												made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
-												//System.out.println(made);
-											}
-											else{
-												if(!patient.isMAdone())
-													made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
-											}
-											//if(made) break; //cannot address two needs at the same time
-										}
+									for(int i = 0; i < (int)(cases*PN*PNcase2); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.PN2, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
 									}
-									update(patients, rooms, doctors, time);
-								}
-
-							}
-
-							//book the psychiatrist
-							for(int time = 0; time < dayLength; time+=iteration){
-								for(int i = 0; i < patients.length; i++){
-									doneIndex = donePatients(patients);
-									//sortPatients(patients, doneIndex);
-
-									Patient patient = patients[i];
-									if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
-									int[] needs = patient.getNeeds();
-									if(patient.isDone()) continue;
-									for(int j = 19; j <= 20; j++){
-										if(j%3==0) continue; //Pre-MA
-										if(needs[j] != 0){
-											boolean made = false;
-											if(j%3==2){
-												made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
-											}
-											else{
-												if(!patient.isMAdone())
-													made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
-											}
-											//if(made) break; //cannot address two needs at the same time
-										}
-
+									for(int i = 0; i < (int)(cases*genMed*GMcase1); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM1, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
 									}
-									update(patients, rooms, doctors, time);
-								}
+									for(int i = 0; i < (int)(cases*genMed*GMcase2); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM2, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
+									}
+									for(int i = 0; i < (int)(cases*genMed*GMcase3); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.GM3, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
+									}
 
-							}
+									for(int i = 0; i < (int)(cases*A*Acase1); i++){
+										tempPatients.add(new Patient(dayLength, apptInterval, Patient.CaseType.A1, lengths, checkInLength, checkOutLength, i+1, index));
+										index++;
+									}
 
 
-							//book everything else
-							for(int i = 0; i < patients.length; i++){ //for loop (Patients)
-								for(int time = 0; time < dayLength; time+=iteration){ //for loop (Minutes)
-									doneIndex = donePatients(patients);
-									//sortPatients(patients, doneIndex);
+									patients = tempPatients.toArray(new Patient[tempPatients.size()]);
 
-									Patient patient = patients[i];
-									if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
-									if(patient.isDone()) continue;
-									int[] needs = patient.getNeeds();
-									for(int j = 0; j < needs.length; j++){ //for loop (Needs)
-										if(j%3==0) continue; //Pre-MA
-										if(needs[j] != 0){
-											boolean made = false;
-											if(j%3==2){
-												made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
-											}
-											else{
-												if(!patient.isMAdone())
-													made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
-											}
-											if(made) break; //cannot address two needs at the same time
-										}
+									if(flag){
+										System.out.println("Number of DBQs: "+Patient.numDBQs(patients));
+										System.out.println("Total Diagnostic Time: "+Patient.totalDBQtime(patients));
+										flag = false;
+									}
+
+									ArrayList<Room> tempRooms = new ArrayList<Room>();
+									tempRooms.add(new Room(dayLength, Room.RoomType.PLANNING, lengths, 0));
+									for(int i = 0; i < roomTriage; i++){
+										tempRooms.add(new Room(dayLength, Room.RoomType.TRIAGE, lengths, i+1));
+									}		
+									for(int i = 0; i < roomGM; i++){
+										tempRooms.add(new Room(dayLength, Room.RoomType.GM, lengths, i+1));
+									}
+									for(int i = 0; i < roomA; i++){
+										tempRooms.add(new Room(dayLength, Room.RoomType.A, lengths, i+1));
+									}
+									for(int i = 0; i < roomP; i++){
+										tempRooms.add(new Room(dayLength, Room.RoomType.P, lengths, i+1));
+									}
+
+									rooms = tempRooms.toArray(new Room[tempRooms.size()]);
+
+									ArrayList<Doctor> tempDoctors = new ArrayList<Doctor>();	
+									for(int i = 0; i < numMA; i++){
+										tempDoctors.add(new Doctor(costs[0], dayLength, Doctor.DocType.MA, lengths, checkInLength, checkOutLength, i+1));
+									}
+									for(int i = 0; i < numNP; i++){
+										tempDoctors.add(new Doctor(costs[1], dayLength, Doctor.DocType.NP, lengths, checkInLength, checkOutLength, i+1));
+									}
+									for(int i = 0; i < numA; i++){
+										tempDoctors.add(new Doctor(costs[2], dayLength, Doctor.DocType.A, lengths, checkInLength, checkOutLength, i+1));
 									}	
-									update(patients, rooms, doctors, time);
-								}
+									for(int i = 0; i < numN; i++){
+										tempDoctors.add(new Doctor(costs[3], dayLength, Doctor.DocType.N, lengths, checkInLength, checkOutLength, i+1));
+									}
+									for(int i = 0; i < numP; i++){
+										tempDoctors.add(new Doctor(costs[4], dayLength, Doctor.DocType.P, lengths, checkInLength, checkOutLength, i+1));
+									}
 
 
-							}
+									doctors = tempDoctors.toArray(new Doctor[tempDoctors.size()]);
 
-							//book the PMA (Pre-MA)
-							for(int time = 0; time < dayLength; time+=iteration){
-								for(int i = 0; i < patients.length; i++){
-									Patient patient = patients[i];
-									int[] needs = patient.getNeeds();
-									for(int j = 0; j < lengths.length; j+=3){
-										if(needs[j] != 0){
-											makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
-											//if multiple MA's are available, they can take care of multiple Pre-MAs of the same patient
+									int doneIndex = 0;
+									sortPatients(patients, doneIndex);
+
+									//book the audiologist
+									for(int time = 0; time < dayLength; time+=iteration){
+										for(int i = 0; i < patients.length; i++){
+											doneIndex = donePatients(patients);
+											sortPatients(patients, doneIndex);
+											Patient patient = patients[i];
+											if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
+											int[] needs = patient.getNeeds();
+											if(patient.isDone()) continue;
+											for(int j =13; j <= 14; j++){
+												if(j%3==0) continue; //Pre-MA
+												if(needs[j] != 0){
+													boolean made = false;
+													if(j%3==2){
+														made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
+													}
+													else{
+														if(!patient.isMAdone())
+															made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
+													}
+													if(made) break; //cannot address two needs at the same time
+												}
+
+
+											}
+											update(patients, rooms, doctors, time);
+										}
+
+									}
+
+									//book the neurologist and psychiatrist
+									for(int time = 0; time < dayLength; time+=iteration){
+										for(int i = 0; i < patients.length; i++){
+											doneIndex = donePatients(patients);
+											sortPatients(patients, doneIndex);
+
+											Patient patient = patients[i];
+											if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
+											int[] needs = patient.getNeeds();
+											if(patient.isDone()) continue;
+											for(int j = 16; j <= 20; j++){
+												if(j%3==0) continue; //Pre-MA
+												if(needs[j] != 0){
+													boolean made = false;
+													if(j%3==2){
+														made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
+													}
+													else{
+														if(!patient.isMAdone())
+															made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
+													}
+													if(made) break; //cannot address two needs at the same time
+												}
+											}
+											update(patients, rooms, doctors, time);
+										}
+
+									}
+
+									//book everything else
+									//at this point, we want patients to get done; hence, the outer patient loop
+									for(int time = 0; time < dayLength; time+=iteration){ //for loop (Minutes)
+										for(int i = 0; i < patients.length; i++){ //for loop (Patients)
+											doneIndex = donePatients(patients);
+											sortPatients(patients, doneIndex);
+											Patient patient = patients[i];
+											if(Patient.numWaiting(time, patients) >= maxWaiting && !patient.hasStarted()) continue; //too many people waiting: get them done first
+											if(patient.isDone()) continue;
+											int[] needs = patient.getNeeds();
+											for(int j = 0; j < needs.length; j++){ //for loop (Needs)
+												if(j%3==0) continue; //Pre-MA
+												if(needs[j] != 0){
+													boolean made = false;
+													if(j%3==2){
+														made = makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
+													}
+													else{
+														if(!patient.isMAdone())
+															made = makeMAMatch(patient, doctors, rooms, lengths, time, dayLength);
+													}
+													if(made) break; //cannot address two needs at the same time
+												}
+											}	
+											update(patients, rooms, doctors, time);
+										}
+
+
+									}
+
+									//book the PMA (Pre-MA)
+									for(int time = 0; time < dayLength; time+=iteration){
+										for(int i = 0; i < patients.length; i++){
+											Patient patient = patients[i];
+											sortPatients(patients, doneIndex);
+											int[] needs = patient.getNeeds();
+											for(int j = 0; j < lengths.length; j+=3){
+												if(needs[j] != 0){
+													makeMatch(patient, doctors, rooms, lengths, time, j, dayLength);
+													//if multiple MA's are available, they can take care of multiple Pre-MAs of the same patient
+												}
+											}
+										}
+										update(patients, rooms, doctors, time);
+									}
+
+									finish(patients, doctors, rooms);
+									boolean completelyDone = completelyDone(patients);
+
+									for(int time = 0; time < dayLength; time++){
+										for(Patient p:patients){
+											if(p.getDoneTime() >= time && p.getStartTime() <= time && !p.isBusy(time)){
+												lobbyOccupancy[time] ++;
+											}
 										}
 									}
-								}
-								update(patients, rooms, doctors, time);
-							}
 
-							boolean completelyDone = completelyDone(patients);
-
-
-
-							finish(patients, doctors, rooms);
-
-							doneIndex = donePatients(patients);
-							//sortPatients(patients, doneIndex);
-
-							for(int time = 0; time < dayLength; time++){
-								for(Patient p:patients){
-									if(p.getDoneTime() >= time && p.getStartTime() <= time && !p.isBusy(time)){
-										lobbyOccupancy[time] ++;
+									if(completelyDone && Doctor.totalWastedTime(doctors)*Patient.totalLobbyTime(patients) < minCost){
+										ArrayList<Doctor> temp = new ArrayList<Doctor>();
+										for(Doctor d: doctors){
+											if(d.getStartTime() >= 0) temp.add(d);
+										}
+										optDoctors = temp.toArray(new Doctor[temp.size()]);
+										optPatients = patients;
+										optRooms = rooms;
+										optLobbyOccupancy = lobbyOccupancy;
+										minCost = Doctor.totalCost(doctors);
+										success = true;
 									}
-								}
-							}
 
-							if(completelyDone && Doctor.totalCost(doctors)*Patient.totalLobbyTime(patients) < minCost){
-								ArrayList<Doctor> temp = new ArrayList<Doctor>();
-								for(Doctor d: doctors){
-									if(d.getStartTime() >= 0) temp.add(d);
-								}
-								optDoctors = temp.toArray(new Doctor[temp.size()]);
-								optPatients = patients;
-								optRooms = rooms;
-								optLobbyOccupancy = lobbyOccupancy;
-								minCost = Doctor.totalCost(doctors);
-								success = true;
-							}
+									else if(Patient.remainingCases(patients) < minCasesLeft){
+										optDoctors = doctors;
+										optPatients = patients;
+										optRooms = rooms;
+										optLobbyOccupancy = lobbyOccupancy;
+									}
 
-							else if(Patient.remainingCases(patients) < minCasesLeft){
-								optDoctors = doctors;
-								optPatients = patients;
-								optRooms = rooms;
-								optLobbyOccupancy = lobbyOccupancy;
+								}
 							}
 
 						}
+
 					}
-
 				}
-
 			}
 		}
 
-
-
-
-
-		//re-order patients
+		//re-order patients to original ordering
 		for(int i = 0; i < optPatients.length; i++){
 			int minIndex = i;
 			int min = optPatients[i].getPlace();
@@ -538,11 +499,7 @@ public class Simulation {
 
 		}
 
-
-
 		/**
-
-
 		System.out.printf("Average Patient Wait Time: %.2f",Patient.totalStartWaitTime(optPatients)*1.0/optPatients.length);
 		System.out.println();
 		System.out.println("Maximum Patient Wait Time: "+Patient.maxStartWaitTime(optPatients));
@@ -885,7 +842,7 @@ public class Simulation {
 		XSSFSheet doctorWastage = workbook.createSheet("DoctorWastage");
 		data = new ArrayList<Object[]>();
 		data.add(new Object[] {"Doctor Wastage Bins", "Doctor Wastage Frequencies"});
-		for(int i = 0; i < startWaitBins.size(); i++){
+		for(int i = 0; i < doctorWasteBins.size(); i++){
 			data.add(new Object[] {doctorWasteBins.get(i), doctorWasteFreq.get(i)});
 		}
 
@@ -956,7 +913,7 @@ public class Simulation {
 	 */
 
 	private static int donePatients(Patient[] patients) {
-		//RandomizeArray(patients);
+		RandomizeArray(patients);
 		int swapIndex = 0;
 		for(int i = 0; i < patients.length; i++){
 			if(patients[i].isDone()) {

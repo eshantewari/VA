@@ -27,9 +27,6 @@ public class Doctor {
 	private int dayLength;
 	private int startTime;
 	private int endTime;
-
-	
-
 	
 	
 	public enum DocType {
